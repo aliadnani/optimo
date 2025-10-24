@@ -1,10 +1,10 @@
-import DifferentialEvolution from './sections/differential-evolution'
+import DifferentialEvolution from './sections/differential-evolution/index'
 
 function App() {
     return (
         <div className="App">
             <header className="">
-                <h1>Optimo</h1>
+                <h1>Optimizations in Motion</h1>
                 <p className="author">
                     Ali Imran
                     <br />
@@ -15,9 +15,14 @@ function App() {
             <div className="abstract">
                 <h2>Abstract</h2>
                 <p>
-                    Interactive visualizations of optimaization algorithms. We
-                    learned a lot of them - but not all of them are fun to
-                    visualize. Here are the ones that are!
+                    Interactive visualizations of some select optimization
+                    algorithms. Only differential evolution is covered at the
+                    moment; but more algorithms will be added in the future. I
+                    want to cover line search, trust region methods, conjugate
+                    gradient, gradient descent variants, and some more
+                    evolutionary algorithms like particle swarm optimization.
+                    Maybe genetic algorithms but those aren't so fun to
+                    visualize.
                 </p>
             </div>
 

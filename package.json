@@ -14,7 +14,9 @@
     "dependencies": {
         "@observablehq/plot": "^0.6.17",
         "d3": "^7.9.0",
+        "echarts": "^6.0.0",
         "latex.css": "^1.13.0",
+        "mathjax": "^4.0.0",
         "react": "^19.1.1",
         "react-dom": "^19.1.1",
         "react-hook-form": "^7.65.0"
