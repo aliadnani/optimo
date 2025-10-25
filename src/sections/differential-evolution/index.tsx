@@ -54,7 +54,7 @@ export default function DifferentialEvolution() {
             populationSize: 10,
             crossoverProbability: 0.9,
             differentialWeight: 0.8,
-            iterations: 60,
+            iterations: 68,
             intervalDuration: 100,
         },
         mode: 'onChange',
@@ -165,14 +165,15 @@ export default function DifferentialEvolution() {
                 mutation, crossover, and greedy selection.
             </p>
             <p>
-                The Wikipedia article explains the algorithm quite well:{' '}
+                The{' '}
                 <a
                     href="https://en.wikipedia.org/wiki/Differential_evolution#Algorithm"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    https://en.wikipedia.org/wiki/Differential_evolution#Algorithm
+                    Wikipedia article
                 </a>
+                {' '}explains the algorithm quite well.
             </p>
 
             <h3>Interactive Visualization</h3>
