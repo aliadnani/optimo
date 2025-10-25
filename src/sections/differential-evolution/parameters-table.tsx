@@ -47,6 +47,10 @@ export default function ParametersTable({ register, errors, configs }: Props) {
                         <td style={{ paddingRight: '1rem' }}>
                             <input
                                 type="number"
+                                min={configs.population.min}
+                                max={configs.population.max}
+                                step={1}
+                                required
                                 {...register('populationSize', {
                                     min: configs.population.min,
                                     max: configs.population.max,
@@ -78,7 +82,10 @@ export default function ParametersTable({ register, errors, configs }: Props) {
                         <td style={{ paddingRight: '1rem' }}>
                             <input
                                 type="number"
+                                min={configs.crossover.min}
+                                max={configs.crossover.max}
                                 step="0.1"
+                                required
                                 {...register('crossoverProbability', {
                                     min: configs.crossover.min,
                                     max: configs.crossover.max,
@@ -110,7 +117,10 @@ export default function ParametersTable({ register, errors, configs }: Props) {
                         <td style={{ paddingRight: '1rem' }}>
                             <input
                                 type="number"
+                                min={configs.differentialWeight.min}
+                                max={configs.differentialWeight.max}
                                 step="0.1"
+                                required
                                 {...register('differentialWeight', {
                                     min: configs.differentialWeight.min,
                                     max: configs.differentialWeight.max,
@@ -142,6 +152,10 @@ export default function ParametersTable({ register, errors, configs }: Props) {
                         <td style={{ paddingRight: '1rem' }}>
                             <input
                                 type="number"
+                                min={configs.iterations.min}
+                                max={configs.iterations.max}
+                                step={1}
+                                required
                                 {...register('iterations', {
                                     min: configs.iterations.min,
                                     max: configs.iterations.max,
@@ -171,6 +185,10 @@ export default function ParametersTable({ register, errors, configs }: Props) {
                         <td style={{ paddingRight: '1rem' }}>
                             <input
                                 type="number"
+                                min={configs.interval.min}
+                                max={configs.interval.max}
+                                step={10}
+                                required
                                 {...register('intervalDuration', {
                                     min: configs.interval.min,
                                     max: configs.interval.max,

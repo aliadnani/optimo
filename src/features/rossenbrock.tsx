@@ -12,11 +12,13 @@ export type CustomMark = {
         stroke: string
         strokeWidth: number
     } | null
-    xMark?: {
-        symbol: string
+    mark?: {
         fill: string
-        fontSize: number
-        fontWeight: 'normal' | 'bold' | 'lighter' | 'bolder' | number
+        // radius in pixels for Plot.dot
+        r?: number
+        // optional stroke and width for dot outline
+        stroke?: string
+        strokeWidth?: number
     } | null
     label?: {
         text: string
@@ -31,6 +33,8 @@ export type CustomMark = {
 type RosenbrockProps = {
     customMarks?: CustomMark[]
     aspect?: number
+    // Optional animation duration for dot transitions (ms)
+    animationDurationMs?: number
 }
 
 // Keep a single source of truth for the plotting domain
@@ -41,8 +45,14 @@ const DOMAIN = {
     y2: 3,
 }
 
-function Rosenbrock({ customMarks = [], aspect }: RosenbrockProps) {
+function Rosenbrock({
+    customMarks = [],
+    aspect,
+    animationDurationMs,
+}: RosenbrockProps) {
     const containerRef = useRef<HTMLDivElement | null>(null)
+
+    const marks = customMarks
 
     useEffect(() => {
         // Generate logarithmically spaced thresholds
@@ -57,66 +67,9 @@ function Rosenbrock({ customMarks = [], aspect }: RosenbrockProps) {
         }
 
         // Main plotting code here !!
-        // Helper: clip a line segment to the DOMAIN rectangle using Liang–Barsky
-        function clipSegmentToDomain(
-            x0: number,
-            y0: number,
-            x1: number,
-            y1: number
-        ): { x1: number; y1: number; x2: number; y2: number } | null {
-            const xmin = DOMAIN.x1
-            const xmax = DOMAIN.x2
-            const ymin = DOMAIN.y1
-            const ymax = DOMAIN.y2
+        // Plot-level clipping is enabled; no manual segment clipping required.
 
-            const dx = x1 - x0
-            const dy = y1 - y0
-
-            let u1 = 0
-            let u2 = 1
-
-            const p = [-dx, dx, -dy, dy]
-            const q = [x0 - xmin, xmax - x0, y0 - ymin, ymax - y0]
-
-            for (let i = 0; i < 4; i++) {
-                const pi = p[i]
-                const qi = q[i]
-                if (pi === 0) {
-                    if (qi < 0) return null // Parallel and outside
-                } else {
-                    const r = qi / pi
-                    if (pi < 0) {
-                        if (r > u2) return null
-                        if (r > u1) u1 = r
-                    } else if (pi > 0) {
-                        if (r < u1) return null
-                        if (r < u2) u2 = r
-                    }
-                }
-            }
-
-            const cx0 = x0 + u1 * dx
-            const cy0 = y0 + u1 * dy
-            const cx1 = x0 + u2 * dx
-            const cy1 = y0 + u2 * dy
-            return { x1: cx0, y1: cy0, x2: cx1, y2: cy1 }
-        }
-
-        // Filter out marks outside the plotting domain
-        const filteredMarks = customMarks.filter((m) => {
-            const x = m.position.x
-            const y = m.position.y
-            return (
-                Number.isFinite(x) &&
-                Number.isFinite(y) &&
-                x >= DOMAIN.x1 &&
-                x <= DOMAIN.x2 &&
-                y >= DOMAIN.y1 &&
-                y <= DOMAIN.y2
-            )
-        })
-
-        const plot = Plot.plot({
+    const plot = Plot.plot({
             color: {
                 type: 'log',
                 scheme: 'viridis',
@@ -125,9 +78,12 @@ function Rosenbrock({ customMarks = [], aspect }: RosenbrockProps) {
                 domain: [1e-4, 1e3], // Match Wikipedia: 10^-4 to 10^3
                 label: 'f(x,y)',
             },
+            x: { domain: [DOMAIN.x1, DOMAIN.x2] },
+            y: { domain: [DOMAIN.y1, DOMAIN.y2] },
             aspectRatio: aspect ?? 0.56,
             // width: 600,
             // height: 600,
+                clip: true,
             marks: [
                 Plot.contour({
                     fill: rosenbrock,
@@ -139,8 +95,8 @@ function Rosenbrock({ customMarks = [], aspect }: RosenbrockProps) {
                     y2: DOMAIN.y2,
                     thresholds: logThresholds,
                 }),
-                // Render X marks and lines from customMarks configuration
-                ...filteredMarks.flatMap((mark) => {
+                // Render X marks and lines from filtered configuration
+                ...marks.flatMap((mark) => {
                     const marks = []
 
                     // Add line if configured
@@ -152,11 +108,11 @@ function Rosenbrock({ customMarks = [], aspect }: RosenbrockProps) {
                                 x2:
                                     mark.position.x +
                                     mark.line.length *
-                                        Math.cos(mark.line.angle),
+                                    Math.cos(mark.line.angle),
                                 y2:
                                     mark.position.y +
                                     mark.line.length *
-                                        Math.sin(mark.line.angle),
+                                    Math.sin(mark.line.angle),
                             },
                         ]
 
@@ -168,6 +124,7 @@ function Rosenbrock({ customMarks = [], aspect }: RosenbrockProps) {
                                 y2: 'y2',
                                 stroke: mark.line.stroke,
                                 strokeWidth: mark.line.strokeWidth,
+                                clip: true,
                             })
                         )
                     }
@@ -178,47 +135,53 @@ function Rosenbrock({ customMarks = [], aspect }: RosenbrockProps) {
                         Number.isFinite(mark.oldPosition.x) &&
                         Number.isFinite(mark.oldPosition.y)
                     ) {
-                        const clipped = clipSegmentToDomain(
-                            mark.oldPosition.x,
-                            mark.oldPosition.y,
-                            mark.position.x,
-                            mark.position.y
+                        const moveLink = [
+                            {
+                                x1: mark.oldPosition.x,
+                                y1: mark.oldPosition.y,
+                                x2: mark.position.x,
+                                y2: mark.position.y,
+                            },
+                        ]
+                        marks.push(
+                            Plot.link(moveLink, {
+                                x1: 'x1',
+                                y1: 'y1',
+                                x2: 'x2',
+                                y2: 'y2',
+                                stroke: mark.mark?.fill ?? '#333',
+                                strokeWidth: 1.5,
+                                strokeOpacity: 0.8,
+                                className: 'de-lines',
+                                clip: true,
+                            })
                         )
-
-                        if (clipped) {
-                            const moveLink = [clipped]
-                            marks.push(
-                                Plot.link(moveLink, {
-                                    x1: 'x1',
-                                    y1: 'y1',
-                                    x2: 'x2',
-                                    y2: 'y2',
-                                    stroke: mark.xMark?.fill ?? '#333',
-                                    strokeWidth: 1.5,
-                                    strokeOpacity: 0.8,
-                                })
-                            )
-                        }
                     }
 
-                    // Add X marker if configured
-                    if (mark.xMark) {
+                    // Add circular mark if configured (use Plot.dot)
+                    if (mark.mark) {
                         marks.push(
-                            Plot.text(
+                            Plot.dot(
                                 [
                                     {
-                                        x: mark.position.x,
-                                        y: mark.position.y,
-                                        label: mark.xMark.symbol,
+                                        x:
+                                            mark.oldPosition?.x ??
+                                            mark.position.x,
+                                        y:
+                                            mark.oldPosition?.y ??
+                                            mark.position.y,
                                     },
                                 ],
                                 {
                                     x: 'x',
                                     y: 'y',
-                                    text: 'label',
-                                    fill: mark.xMark.fill,
-                                    fontSize: mark.xMark.fontSize,
-                                    fontWeight: mark.xMark.fontWeight,
+                                    fill: mark.mark.fill,
+                                    r: mark.mark.r ?? 6,
+                                    stroke: mark.mark.stroke,
+                                    strokeWidth: mark.mark.strokeWidth,
+                                    className: 'de-points',
+                                    clip: true,
+
                                 }
                             )
                         )
@@ -245,6 +208,7 @@ function Rosenbrock({ customMarks = [], aspect }: RosenbrockProps) {
                                     fontSize: mark.label.fontSize,
                                     fontWeight: mark.label.fontWeight,
                                     paintOrder: 'stroke',
+                                    clip: true,
                                 }
                             )
                         )
@@ -266,8 +230,36 @@ function Rosenbrock({ customMarks = [], aspect }: RosenbrockProps) {
             },
         })
 
+        const xScale = plot.scale('x')
+        const yScale = plot.scale('y')
         // Center the legend
         d3.select(plot).style('margin', '0 auto').style('display', 'table')
+
+        animationDurationMs = animationDurationMs ?? 98
+
+        d3.select(plot)
+            .selectAll('.de-lines')
+            .style('opacity', 0)
+            .transition()
+            .duration(Math.max(0, Math.floor(animationDurationMs * (2 / 5))))
+            .ease(d3.easeQuadInOut)
+            .style('opacity', 1)
+            .transition()
+            .delay(animationDurationMs * (1 / 5))
+            .duration(Math.max(0, Math.floor(animationDurationMs * (2 / 5))))
+            .style('opacity', 0)
+
+        if (xScale && yScale && marks[0]?.oldPosition) {
+            d3.select(plot)
+                .selectAll('.de-points circle')
+                .data(marks)
+                .transition()
+                .ease(d3.easeCubicInOut)
+                .attr('cx', (d) => xScale.apply(d.position.x))
+                .attr('cy', (d) => yScale.apply(d.position.y))
+                .duration(Math.max(0, Math.floor(animationDurationMs)))
+        }
+        // transition().attr('r', 2).duration(95)
         d3.select(legend).style('margin', '0 auto').style('display', 'table')
 
         // React shenanigans
@@ -278,7 +270,7 @@ function Rosenbrock({ customMarks = [], aspect }: RosenbrockProps) {
             plot.remove()
             legend.remove()
         }
-    }, [customMarks, aspect])
+    }, [marks, aspect, animationDurationMs])
 
     return (
         <>

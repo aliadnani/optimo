@@ -32,6 +32,18 @@ body {
     flex-wrap: nowrap;
 }
 
+/* Button styles to avoid React state updates on hover */
+.de-buttons button {
+    border-radius: 8px;
+    background: transparent;
+    transition: background 0.2s ease;
+    cursor: pointer;
+}
+
+.de-buttons button:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
 /* Parameters table minor tweaks */
 .de-params th,
 .de-params td {

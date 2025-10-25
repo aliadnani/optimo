@@ -32,11 +32,13 @@ export function generateMarks(
             prevPoints && prevPoints[i]
                 ? { x: prevPoints[i].x, y: prevPoints[i].y }
                 : null,
-        xMark: {
-            symbol: '○',
+        mark: {
             fill: point.colorHex,
-            fontSize: 16,
-            fontWeight: 'bold',
+            // radius in pixels for Plot.dot
+            r: 6,
+            // keep a bold outline for visibility
+            stroke: '#fff',
+            strokeWidth: 1,
         },
     }))
 }

@@ -42,7 +42,6 @@ export default function DifferentialEvolution() {
     const [iteration, setIteration] = useState(0)
     const [isRunning, setIsRunning] = useState(true)
     const [iterationLog, setIterationLog] = useState<IterationLogEntry[]>([])
-    const [hoveredButton, setHoveredButton] = useState<string | null>(null)
     const [isColumnLayout, setIsColumnLayout] = useState(false)
 
     const {
@@ -60,10 +59,41 @@ export default function DifferentialEvolution() {
         mode: 'onChange',
     })
 
-    const populationSize = watch('populationSize')
-    const intervalDuration = watch('intervalDuration')
-    const F = watch('differentialWeight')
-    const CR = watch('crossoverProbability')
+    const populationSizeRaw = watch('populationSize')
+    const intervalDurationRaw = watch('intervalDuration')
+    const Fraw = watch('differentialWeight')
+    const CRraw = watch('crossoverProbability')
+
+    // Clamp watched values to their allowed ranges to prevent downstream issues
+    const clamp = (v: number | undefined, min: number, max: number) => {
+        const num = typeof v === 'number' && !Number.isNaN(v) ? v : min
+        return globalThis.Math.min(max, globalThis.Math.max(min, num))
+    }
+    const populationSize = clamp(
+        populationSizeRaw,
+        POPULATION_SIZE_CONFIG.min,
+        POPULATION_SIZE_CONFIG.max
+    )
+    const intervalDuration = clamp(
+        intervalDurationRaw,
+        INTERVAL_CONFIG.min,
+        INTERVAL_CONFIG.max
+    )
+    const F = clamp(
+        Fraw,
+        DIFFERENTIAL_WEIGHT_CONFIG.min,
+        DIFFERENTIAL_WEIGHT_CONFIG.max
+    )
+    const CR = clamp(
+        CRraw,
+        CROSSOVER_PROBABILITY_CONFIG.min,
+        CROSSOVER_PROBABILITY_CONFIG.max
+    )
+    const iterationsClamped = clamp(
+        watch('iterations'),
+        ITERATIONS_CONFIG.min,
+        ITERATIONS_CONFIG.max
+    )
 
     const configs = useMemo(
         () => ({
@@ -124,7 +154,7 @@ export default function DifferentialEvolution() {
         if (!isRunning) return
 
         const interval = setInterval(() => {
-            const maxIterations = watch('iterations')
+            const maxIterations = iterationsClamped
             const newIteration = iteration >= maxIterations ? 0 : iteration + 1
             setIteration(newIteration)
 
@@ -149,7 +179,8 @@ export default function DifferentialEvolution() {
         populationSize,
         iteration,
         points,
-        watch,
+    watch,
+    iterationsClamped,
         F,
         CR,
     ])
@@ -172,8 +203,8 @@ export default function DifferentialEvolution() {
                     rel="noopener noreferrer"
                 >
                     Wikipedia article
-                </a>
-                {' '}explains the algorithm quite well.
+                </a>{' '}
+                explains the algorithm quite well.
             </p>
 
             <h3>Interactive Visualization</h3>
@@ -207,6 +238,10 @@ export default function DifferentialEvolution() {
                     <Rosenbrock
                         customMarks={generateMarks(points, prevPoints)}
                         aspect={isColumnLayout ? 1 : 0.56}
+                        animationDurationMs={globalThis.Math.max(
+                            0,
+                            globalThis.Math.floor(intervalDuration * 0.9)
+                        )}
                     />
                 </div>
 
@@ -216,17 +251,6 @@ export default function DifferentialEvolution() {
                         <div className="de-buttons">
                             <button
                                 onClick={() => setIsRunning(!isRunning)}
-                                onMouseEnter={() => setHoveredButton('start')}
-                                onMouseLeave={() => setHoveredButton(null)}
-                                style={{
-                                    borderRadius: '8px',
-                                    background:
-                                        hoveredButton === 'start'
-                                            ? 'rgba(0, 0, 0, 0.1)'
-                                            : 'transparent',
-                                    transition: 'background 0.2s ease',
-                                    cursor: 'pointer',
-                                }}
                             >
                                 {isRunning ? 'Stop' : 'Start'}
                             </button>
@@ -263,17 +287,6 @@ export default function DifferentialEvolution() {
                                         setIterationLog(result.log)
                                     }
                                 }}
-                                onMouseEnter={() => setHoveredButton('step')}
-                                onMouseLeave={() => setHoveredButton(null)}
-                                style={{
-                                    borderRadius: '8px',
-                                    background:
-                                        hoveredButton === 'step'
-                                            ? 'rgba(0, 0, 0, 0.1)'
-                                            : 'transparent',
-                                    transition: 'background 0.2s ease',
-                                    cursor: 'pointer',
-                                }}
                             >
                                 Step Forward
                             </button>
@@ -292,17 +305,6 @@ export default function DifferentialEvolution() {
                                     )
                                     setPrevPoints(null)
                                     setIterationLog([])
-                                }}
-                                onMouseEnter={() => setHoveredButton('reset')}
-                                onMouseLeave={() => setHoveredButton(null)}
-                                style={{
-                                    borderRadius: '8px',
-                                    background:
-                                        hoveredButton === 'reset'
-                                            ? 'rgba(0, 0, 0, 0.1)'
-                                            : 'transparent',
-                                    transition: 'background 0.2s ease',
-                                    cursor: 'pointer',
                                 }}
                             >
                                 Reset
